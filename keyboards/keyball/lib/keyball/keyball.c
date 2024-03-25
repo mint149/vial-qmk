@@ -23,13 +23,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "keyball.h"
 #include "drivers/pmw3360/pmw3360.h"
 
+#include <string.h>
+
 const uint8_t CPI_DEFAULT    = KEYBALL_CPI_DEFAULT / 100;
 const uint8_t CPI_MAX        = pmw3360_MAXCPI + 1;
 const uint8_t SCROLL_DIV_MAX = 7;
-#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-const uint16_t AML_TIMEOUT_DEFAULT = 9;
-const uint16_t AML_TIMEOUT_MAX     = 15;
-#endif
+
+const uint16_t AML_TIMEOUT_MIN = 100;
+const uint16_t AML_TIMEOUT_MAX = 1000;
+const uint16_t AML_TIMEOUT_QU  = 50;   // Quantization Unit
+
+static const char BL = '\xB0'; // Blank indicator character
+static const char LFSTR_ON[] PROGMEM = "\xB2\xB3";
+static const char LFSTR_OFF[] PROGMEM = "\xB4\xB5";
 
 keyball_t keyball = {
     .this_have_ball = false,
@@ -45,10 +51,7 @@ keyball_t keyball = {
     .scroll_mode = false,
     .scroll_div  = 0,
 
-#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-    .aml_enabled = 0,
-    .aml_timeout = 0,
-#endif
+    .pressing_keys = { BL, BL, BL, BL, BL, BL, 0 },
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -67,6 +70,14 @@ static int16_t add16(int16_t a, int16_t b) {
     } else if (a < 0 && b < 0 && r >= 0) {
         r = -32768;
     }
+    return r;
+}
+
+// divmod16 divides *v by div, returns the quotient, and assigns the remainder
+// to *v.
+static int16_t divmod16(int16_t *v, int16_t div) {
+    int16_t r = *v / div;
+    *v -= r * div;
     return r;
 }
 
@@ -119,15 +130,6 @@ static void add_scroll_div(int8_t delta) {
     keyball_set_scroll_div(v < 1 ? 1 : v);
 }
 
-
-#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-static void add_aml_timeout(int8_t delta) {
-    int8_t v = keyball_get_aml_timeout() + delta;
-    keyball_set_aml_timeout(v < 1 ? 1 : v);
-}
-#endif
-
-
 //////////////////////////////////////////////////////////////////////////////
 // Pointing device driver
 
@@ -143,12 +145,16 @@ void pointing_device_driver_init(void) {
     keyball.this_have_ball = pmw3360_init();
 #endif
     if (keyball.this_have_ball) {
-        pmw3360_cpi_set(CPI_DEFAULT - 1);
-        pmw3360_reg_write(pmw3360_Motion_Burst, 0);
-
-#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-        set_auto_mouse_layer(1);
+#if defined(KEYBALL_PMW3360_UPLOAD_SROM_ID)
+#    if KEYBALL_PMW3360_UPLOAD_SROM_ID == 0x04
+        pmw3360_srom_upload(pmw3360_srom_0x04);
+#    elif KEYBALL_PMW3360_UPLOAD_SROM_ID == 0x81
+        pmw3360_srom_upload(pmw3360_srom_0x81);
+#    else
+#        error Invalid value for KEYBALL_PMW3360_UPLOAD_SROM_ID. Please choose 0x04 or 0x81 or disable it.
+#    endif
 #endif
+        pmw3360_cpi_set(CPI_DEFAULT - 1);
     }
 }
 
@@ -181,11 +187,9 @@ static void motion_to_mouse_move(keyball_motion_t *m, report_mouse_t *r, bool is
 
 static void motion_to_mouse_scroll(keyball_motion_t *m, report_mouse_t *r, bool is_left) {
     // consume motion of trackball.
-    uint8_t div = keyball_get_scroll_div() - 1;
-    int16_t x   = m->x >> div;
-    m->x -= x << div;
-    int16_t y = m->y >> div;
-    m->y -= y << div;
+    int16_t div = 1 << (keyball_get_scroll_div() - 1);
+    int16_t x = divmod16(&m->x, div);
+    int16_t y = divmod16(&m->y, div);
 
     // apply to mouse report.
 #if KEYBALL_MODEL == 61 || KEYBALL_MODEL == 39 || KEYBALL_MODEL == 147 || KEYBALL_MODEL == 44
@@ -376,58 +380,75 @@ const char PROGMEM code_to_name[] = {
 void keyball_oled_render_ballinfo(void) {
 #ifdef OLED_ENABLE
     // Format: `Ball:{mouse x}{mouse y}{mouse h}{mouse v}`
-    //         `    CPI{CPI} S{SCROLL_MODE} D{SCROLL_DIV}`
     //
     // Output example:
     //
     //     Ball: -12  34   0   0
-    //
-    oled_write_P(PSTR("Ball:"), false);
+
+    // 1st line, "Ball" label, mouse x, y, h, and v.
+    oled_write_P(PSTR("Ball\xB1"), false);
     oled_write(format_4d(keyball.last_mouse.x), false);
     oled_write(format_4d(keyball.last_mouse.y), false);
     oled_write(format_4d(keyball.last_mouse.h), false);
     oled_write(format_4d(keyball.last_mouse.v), false);
-    // CPI
-    oled_write_P(PSTR("     CPI"), false);
+
+    // 2nd line, empty label and CPI
+    oled_write_P(PSTR("    \xB1\xBC\xBD"), false);
     oled_write(format_4d(keyball_get_cpi()) + 1, false);
-    oled_write_P(PSTR("00  S"), false);
-    oled_write_char(keyball.scroll_mode ? '1' : '0', false);
-    oled_write_P(PSTR("  D"), false);
+    oled_write_P(PSTR("00 "), false);
+
+    // indicate scroll mode: on/off
+    oled_write_P(PSTR("\xBE\xBF"), false);
+    if (keyball.scroll_mode) {
+        oled_write_P(LFSTR_ON, false);
+    } else {
+        oled_write_P(LFSTR_OFF, false);
+    }
+
+    // indicate scroll divider:
+    oled_write_P(PSTR(" \xC0\xC1"), false);
     oled_write_char('0' + keyball_get_scroll_div(), false);
+#endif
+}
+
+void keyball_oled_render_ballsubinfo(void) {
+#ifdef OLED_ENABLE
 #endif
 }
 
 void keyball_oled_render_keyinfo(void) {
 #ifdef OLED_ENABLE
-    // Format: `Key :  R{row}  C{col} K{kc}  '{name}`
+    // Format: `Key :  R{row}  C{col} K{kc} {name}{name}{name}`
     //
     // Where `kc` is lower 8 bit of keycode.
-    // Where `name` is readable label for `kc`, valid between 4 and 56.
+    // Where `name`s are readable labels for pressing keys, valid between 4 and 56.
+    //
+    // `row`, `col`, and `kc` indicates the last processed key,
+    // but `name`s indicate unreleased keys in best effort.
     //
     // It is aligned to fit with output of keyball_oled_render_ballinfo().
     // For example:
     //
-    //     Key :  R2  C3 K06  'c
+    //     Key :  R2  C3 K06 abc
     //     Ball:   0   0   0   0
-    //
-    uint8_t keycode = keyball.last_kc;
 
-    oled_write_P(PSTR("Key :  R"), false);
+    // "Key" Label
+    oled_write_P(PSTR("Key \xB1"), false);
+
+    // Row and column
+    oled_write_char('\xB8', false);
     oled_write_char(to_1x(keyball.last_pos.row), false);
-    oled_write_P(PSTR("  C"), false);
+    oled_write_char('\xB9', false);
     oled_write_char(to_1x(keyball.last_pos.col), false);
-    if (keycode) {
-        oled_write_P(PSTR(" K"), false);
-        oled_write_char(to_1x(keycode >> 4), false);
-        oled_write_char(to_1x(keycode), false);
-    }
-    if (keycode >= 4 && keycode < 57) {
-        oled_write_P(PSTR("  '"), false);
-        char name = pgm_read_byte(code_to_name + keycode - 4);
-        oled_write_char(name, false);
-    } else {
-        oled_advance_page(true);
-    }
+
+    // Keycode
+    oled_write_P(PSTR("\xBA\xBB"), false);
+    oled_write_char(to_1x(keyball.last_kc >> 4), false);
+    oled_write_char(to_1x(keyball.last_kc), false);
+
+    // Pressing keys
+    oled_write_P(PSTR("  "), false);
+    oled_write(keyball.pressing_keys, false);
 #endif
 }
 
@@ -439,30 +460,27 @@ void keyball_oled_render_layerinfo(void) {
     //
     //     Layer:-23------------
     //
-    oled_write_P(PSTR("Layer:"), false);
-    for (uint8_t i = 1; i < 16; i++) {
-        oled_write_char((layer_state_is(i) ? to_1x(i) : '_'), false);
+    oled_write_P(PSTR("L\xB6\xB7r\xB1"), false);
+    for (uint8_t i = 1; i < 8; i++) {
+        oled_write_char((layer_state_is(i) ? to_1x(i) : BL), false);
     }
-#endif
-}
-
-#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-void keyball_oled_render_amlinfo(void) {
-#ifdef OLED_ENABLE
-    // Format: `AML:{AML state} {AML timeout}`
-    //
-    // Output example:
-    //
-    //     AML:o 5
-    //
-    oled_write_P(PSTR("AML:"), false);
-    oled_write_char((keyball.aml_enabled ? 'o' : 'x'), false);
     oled_write_char(' ', false);
-    oled_write(format_4d(keyball.aml_timeout), false);
-    oled_write_P(PSTR("           "), false);
+
+#    ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+    oled_write_P(PSTR("\xC2\xC3"), false);
+    if (get_auto_mouse_enable()) {
+        oled_write_P(LFSTR_ON, false);
+    } else {
+        oled_write_P(LFSTR_OFF, false);
+    }
+
+    oled_write(format_4d(get_auto_mouse_timeout() / 10) + 1, false);
+    oled_write_char('0', false);
+#    else
+    oled_write_P(PSTR("\xC2\xC3\xB4\xB5 ---"), false);
+#    endif
 #endif
 }
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Public API functions
@@ -498,44 +516,8 @@ void keyball_set_cpi(uint8_t cpi) {
     keyball.cpi_changed = true;
     if (keyball.this_have_ball) {
         pmw3360_cpi_set(cpi == 0 ? CPI_DEFAULT - 1 : cpi - 1);
-        pmw3360_reg_write(pmw3360_Motion_Burst, 0);
     }
 }
-
-#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-void keyball_set_aml_enabled(bool enabled) {
-    keyball.aml_enabled = enabled;
-    set_auto_mouse_enable(enabled);
-}
-
-// This method returns current timeout value.
-// It will return 1 to 15.
-//
-//  1=( 1-1)*50+250=250ms
-//  2=( 2-1)*50+250=300ms
-// ...
-//  9=( 9-1)*50+250=650ms
-// 10=(10-1)*50+250=700ms
-// 11=(11-1)*50+250=750ms
-// 12=(12-1)*50+250=800ms
-// 13=(13-1)*50+250=850ms
-// 14=(14-1)*50+250=900ms
-// 15=(15-1)*50+250=950ms
-uint8_t keyball_get_aml_timeout(void) {
-    return keyball.aml_timeout == 0 ? AML_TIMEOUT_DEFAULT : keyball.aml_timeout;
-}
-
-void keyball_set_aml_timeout(uint8_t timeout) {
-    if (timeout > AML_TIMEOUT_MAX) {
-        timeout = AML_TIMEOUT_MAX;
-    }
-    keyball.aml_timeout = timeout;
-    if (timeout == 0) {
-        timeout = AML_TIMEOUT_DEFAULT;
-    }
-    set_auto_mouse_timeout((timeout-1)*50+250);
-}
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Keyboard hooks
@@ -556,8 +538,8 @@ void keyboard_post_init_kb(void) {
         keyball_set_cpi(c.cpi);
         keyball_set_scroll_div(c.sdiv);
 #ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-        keyball_set_aml_enabled(c.amle);
-        keyball_set_aml_timeout(c.amlto);
+        set_auto_mouse_enable(c.amle);
+        set_auto_mouse_timeout(c.amlto == 0 ? AUTO_MOUSE_TIME : (c.amlto + 1) * AML_TIMEOUT_QU);
 #endif
     }
 
@@ -577,10 +559,42 @@ void housekeeping_task_kb(void) {
 }
 #endif
 
+static void pressing_keys_update(uint16_t keycode, keyrecord_t *record) {
+    // Process only valid keycodes.
+    if (keycode >= 4 && keycode < 57) {
+        char value = pgm_read_byte(code_to_name + keycode - 4);
+        char where = BL;
+        if (!record->event.pressed) {
+            // Swap `value` and `where` when releasing.
+            where = value;
+            value = BL;
+        }
+        // Rewrite the last `where` of pressing_keys to `value` .
+        for (int i = 0; i < KEYBALL_OLED_MAX_PRESSING_KEYCODES; i++) {
+            if (keyball.pressing_keys[i] == where) {
+                keyball.pressing_keys[i] = value;
+                break;
+            }
+        }
+    }
+}
+
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+bool is_mouse_record_kb(uint16_t keycode, keyrecord_t* record) {
+    switch (keycode) {
+        case SCRL_MO:
+            return true;
+    }
+    return is_mouse_record_user(keycode, record);
+}
+#endif
+
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     // store last keycode, row, and col for OLED
     keyball.last_kc  = keycode;
     keyball.last_pos = record->event.key;
+
+    pressing_keys_update(keycode, record);
 
     if (!process_record_user(keycode, record)) {
         return false;
@@ -605,7 +619,9 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
         case SCRL_MO:
             keyball_set_scroll_mode(record->event.pressed);
-            return false;
+            // process_auto_mouse may use this in future, if changed order of
+            // processes.
+            return true;
     }
 
     // process events which works on pressed only.
@@ -620,8 +636,8 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                     .cpi   = keyball.cpi_value,
                     .sdiv  = keyball.scroll_div,
 #ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-                    .amle  = keyball.aml_enabled,
-                    .amlto = keyball.aml_timeout,
+                    .amle  = get_auto_mouse_enable(),
+                    .amlto = (get_auto_mouse_timeout() / AML_TIMEOUT_QU) - 1,
 #endif
                 };
                 eeconfig_update_kb(c.raw);
@@ -652,13 +668,19 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
 #ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
             case AML_TO:
-                keyball_set_aml_enabled(!keyball.aml_enabled);
+                set_auto_mouse_enable(!get_auto_mouse_enable());
                 break;
             case AML_I50:
-                add_aml_timeout(1);
+                {
+                    uint16_t v = get_auto_mouse_timeout() + 50;
+                    set_auto_mouse_timeout(MIN(v, AML_TIMEOUT_MAX));
+                }
                 break;
             case AML_D50:
-                add_aml_timeout(-1);
+                {
+                    uint16_t v = get_auto_mouse_timeout() - 50;
+                    set_auto_mouse_timeout(MAX(v, AML_TIMEOUT_MIN));
+                }
                 break;
 #endif
 
