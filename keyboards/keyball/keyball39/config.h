@@ -18,11 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#ifndef __ASSEMBLER__
+
 // Key matrix parameters
-#define MATRIX_ROWS         (4 * 2)  // split keyboard
-#define MATRIX_COLS         6
-#define MATRIX_ROW_PINS     { F4, F5, F6, F7 }
-#define MATRIX_COL_PINS     { D4, C6, D7, E6, B4, B5 }
 #define MATRIX_MASKED
 #define DEBOUNCE            5
 #define DIODE_DIRECTION     COL2ROW
@@ -39,7 +37,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SPLIT_TRANSACTION_IDS_KB KEYBALL_GET_INFO, KEYBALL_GET_MOTION, KEYBALL_SET_CPI
 
 // RGB LED settings
-#define WS2812_DI_PIN       D3
 #ifdef RGBLIGHT_ENABLE
 #    define RGBLED_NUM      48
 #    define RGBLED_SPLIT    { 24, 24 }  // (24 + 22)
@@ -73,3 +70,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // To squeeze firmware size
 #undef LOCKING_SUPPORT_ENABLE
 #undef LOCKING_RESYNC_ENABLE
+
+// BLE Micro Pro
+#define VIAL_KEYBOARD_UID {0x57, 0x3C, 0x33, 0xF6, 0x35, 0x09, 0x7A, 0x29}
+#define MATRIX_ROW_PINS {20,19,18,17}
+#define MATRIX_COL_PINS {7,8,9,10,11,12}
+#define MATRIX_LAYOUT {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,255}
+#define MATRIX_ROWS_DEFAULT (4 * 2)
+#define MATRIX_COLS_DEFAULT 6
+#define THIS_DEVICE_ROWS (4 * 2)
+#define THIS_DEVICE_COLS 6
+#define BMP_DEFAULT_MODE SINGLE
+
+#define ENCODERS_PAD_A {}
+#define ENCODERS_PAD_B {}
+
+#define G00 255 // Dummy for bin/qmk config generation
+#define WS2812_DI_PIN G00
+
+#define IGNORE_ATOMIC_BLOCK
+
+#define BMP_BOOTPIN_AS_RESET
+
+#endif /*__ASSEMBLER__*/

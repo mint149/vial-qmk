@@ -15,13 +15,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdint.h>
+#include <stdlib.h>
 #include "quantum.h"
 #ifdef SPLIT_KEYBOARD
 #    include "transactions.h"
 #endif
 
 #include "keyball.h"
-#include "drivers/pmw3360/pmw3360.h"
+#include "drivers/pmw3360/bmp_pmw3360.h"
 
 #include <string.h>
 
@@ -34,8 +36,11 @@ const uint16_t AML_TIMEOUT_MAX = 1000;
 const uint16_t AML_TIMEOUT_QU  = 50;   // Quantization Unit
 
 static const char BL = '\xB0'; // Blank indicator character
+
+#ifdef OLED_ENABLED
 static const char LFSTR_ON[] PROGMEM = "\xB2\xB3";
 static const char LFSTR_OFF[] PROGMEM = "\xB4\xB5";
+#endif
 
 keyball_t keyball = {
     .this_have_ball = false,
@@ -193,8 +198,8 @@ static void motion_to_mouse_scroll(keyball_motion_t *m, report_mouse_t *r, bool 
 
     // apply to mouse report.
 #if KEYBALL_MODEL == 61 || KEYBALL_MODEL == 39 || KEYBALL_MODEL == 147 || KEYBALL_MODEL == 44
-    r->h = clip2int8(y);
-    r->v = -clip2int8(x);
+    r->h = -clip2int8(y);
+    r->v = clip2int8(x);
     if (is_left) {
         r->h = -r->h;
         r->v = -r->v;
@@ -251,21 +256,11 @@ static inline bool should_report(void) {
 }
 
 report_mouse_t pointing_device_driver_get_report(report_mouse_t rep) {
-    // fetch from optical sensor.
-    if (keyball.this_have_ball) {
-        pmw3360_motion_t d = {0};
-        if (pmw3360_motion_burst(&d)) {
-            ATOMIC_BLOCK_FORCEON {
-                keyball.this_motion.x = add16(keyball.this_motion.x, d.x);
-                keyball.this_motion.y = add16(keyball.this_motion.y, d.y);
-            }
-        }
-    }
     // report mouse event, if keyboard is primary.
-    if (is_keyboard_master() && should_report()) {
+    if (is_bmp_keyboard_master() && should_report()) {
         // modify mouse report by PMW3360 motion.
-        motion_to_mouse(&keyball.this_motion, &rep, is_keyboard_left(), keyball.scroll_mode);
-        motion_to_mouse(&keyball.that_motion, &rep, !is_keyboard_left(), keyball.scroll_mode ^ keyball.this_have_ball);
+        motion_to_mouse(&keyball.this_motion, &rep, is_bmp_keyboard_left(), keyball.scroll_mode);
+        motion_to_mouse(&keyball.that_motion, &rep, !is_bmp_keyboard_left(), keyball.scroll_mode ^ keyball.this_have_ball);
         // store mouse report for OLED.
         keyball.last_mouse = rep;
     }
@@ -311,7 +306,7 @@ static void rpc_get_info_invoke(void) {
 
 #    ifdef VIA_ENABLE
     // adjust VIA layout options according to current combination.
-    uint8_t  layouts = (keyball.this_have_ball ? (is_keyboard_left() ? 0x02 : 0x01) : 0x00) | (keyball.that_have_ball ? (is_keyboard_left() ? 0x01 : 0x02) : 0x00);
+    uint8_t  layouts = (keyball.this_have_ball ? (is_bmp_keyboard_left() ? 0x02 : 0x01) : 0x00) | (keyball.that_have_ball ? (is_bmp_keyboard_left() ? 0x01 : 0x02) : 0x00);
     uint32_t curr    = via_get_layout_options();
     uint32_t next    = (curr & ~0x3) | layouts;
     if (next != curr) {
@@ -375,6 +370,8 @@ const char PROGMEM code_to_name[] = {
     ',', '.', '/',
 };
 // clang-format on
+#else
+const char PROGMEM code_to_name[] = {};
 #endif
 
 void keyball_oled_render_ballinfo(void) {
@@ -525,7 +522,7 @@ void keyball_set_cpi(uint8_t cpi) {
 void keyboard_post_init_kb(void) {
 #ifdef SPLIT_KEYBOARD
     // register transaction handlers on secondary.
-    if (!is_keyboard_master()) {
+    if (!is_bmp_keyboard_master()) {
         transaction_register_rpc(KEYBALL_GET_INFO, rpc_get_info_handler);
         transaction_register_rpc(KEYBALL_GET_MOTION, rpc_get_motion_handler);
         transaction_register_rpc(KEYBALL_SET_CPI, rpc_set_cpi_handler);
@@ -549,7 +546,7 @@ void keyboard_post_init_kb(void) {
 
 #if SPLIT_KEYBOARD
 void housekeeping_task_kb(void) {
-    if (is_keyboard_master()) {
+    if (is_bmp_keyboard_master()) {
         rpc_get_info_invoke();
         if (keyball.that_have_ball) {
             rpc_get_motion_invoke();
@@ -597,6 +594,11 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     pressing_keys_update(keycode, record);
 
     if (!process_record_user(keycode, record)) {
+        return false;
+    }
+
+    // process custom keycodes for BMP
+    if (!process_record_bmp(keycode, record)) {
         return false;
     }
 
@@ -691,4 +693,23 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     }
 
     return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// BLE Micro Pro
+void matrix_scan_kb() {
+    // fetch from optical sensor.
+    if (keyball.this_have_ball) {
+      pmw3360_motion_t d = {0};
+      if (pmw3360_motion_burst(&d)) {
+        ATOMIC_BLOCK_FORCEON {
+          keyball.this_motion.x = add16(keyball.this_motion.x, d.x);
+          keyball.this_motion.y = add16(keyball.this_motion.y, d.y);
+        }
+      }
+
+      BMPAPI->app.schedule_next_task(MATRIX_SCAN_TIME_MS);
+    }
+
+    matrix_scan_user();
 }

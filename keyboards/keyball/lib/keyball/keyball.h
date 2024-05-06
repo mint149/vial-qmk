@@ -17,6 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "pointing_device.h"
+#include "matrix.h"
+#include "bmp.h"
+#include "state_controller.h"
+#include "bmp_matrix.h"
+#include "bmp_custom_keycodes.h"
+#include "lib/bmp/keyboard.h"
+
 //////////////////////////////////////////////////////////////////////////////
 // Configurations
 
@@ -76,33 +84,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define KEYBALL_OLED_MAX_PRESSING_KEYCODES 6
 
+// BLE Micro Pro
+#define MATRIX_SCAN_TIME_MS 40
+
 //////////////////////////////////////////////////////////////////////////////
 // Types
 
 enum keyball_keycodes {
-    KBC_RST  = QK_KB_0, // Keyball configuration: reset to default
-    KBC_SAVE = QK_KB_1, // Keyball configuration: save to EEPROM
+    KBC_RST  = BMP_SAFE_RANGE, // Keyball configuration: reset to default
+    KBC_SAVE, // Keyball configuration: save to EEPROM
 
-    CPI_I100 = QK_KB_2, // CPI +100 CPI
-    CPI_D100 = QK_KB_3, // CPI -100 CPI
-    CPI_I1K  = QK_KB_4, // CPI +1000 CPI
-    CPI_D1K  = QK_KB_5, // CPI -1000 CPI
+    CPI_I100, // CPI +100 CPI
+    CPI_D100, // CPI -100 CPI
+    CPI_I1K,  // CPI +1000 CPI
+    CPI_D1K,  // CPI -1000 CPI
 
     // In scroll mode, motion from primary trackball is treated as scroll
     // wheel.
-    SCRL_TO  = QK_KB_6, // Toggle scroll mode
-    SCRL_MO  = QK_KB_7, // Momentary scroll mode
-    SCRL_DVI = QK_KB_8, // Increment scroll divider
-    SCRL_DVD = QK_KB_9, // Decrement scroll divider
+    SCRL_TO,  // Toggle scroll mode
+    SCRL_MO,  // Momentary scroll mode
+    SCRL_DVI, // Increment scroll divider
+    SCRL_DVD, // Decrement scroll divider
 
     // Auto mouse layer control keycodes.
     // Only works when POINTING_DEVICE_AUTO_MOUSE_ENABLE is defined.
-    AML_TO   = QK_KB_10, // Toggle automatic mouse layer
-    AML_I50  = QK_KB_11, // Increment automatic mouse layer timeout
-    AML_D50  = QK_KB_12, // Decrement automatic mouse layer timeout
+    AML_TO,  // Toggle automatic mouse layer
+    AML_I50, // Increment automatic mouse layer timeout
+    AML_D50, // Decrement automatic mouse layer timeout
 
     // User customizable 32 keycodes.
-    KEYBALL_SAFE_RANGE = QK_USER_0,
+    KEYBALL_SAFE_RANGE,
 };
 
 typedef union {

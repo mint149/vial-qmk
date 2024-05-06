@@ -1,9 +1,3 @@
-# MCU name
-MCU = atmega32u4
-
-# Bootloader selection
-BOOTLOADER = caterina
-
 # Link Time Optimization required for size.
 LTO_ENABLE = yes
 
@@ -16,14 +10,10 @@ NKRO_ENABLE = no            # Enable N-Key Rollover
 BACKLIGHT_ENABLE = no       # Enable keyboard backlight functionality
 AUDIO_ENABLE = no           # Audio output
 
-# Keyball39 is split keyboard.
-SPLIT_KEYBOARD = yes
-
 # Optical sensor driver for trackball.
 POINTING_DEVICE_ENABLE = yes
 POINTING_DEVICE_DRIVER = custom
-SRC += drivers/pmw3360/pmw3360.c
-QUANTUM_LIB_SRC += spi_master.c # Optical sensor use SPI to communicate
+SRC += drivers/pmw3360/bmp_pmw3360.c
 
 # This is unnecessary for processing KC_MS_BTN*.
 MOUSEKEY_ENABLE = no
@@ -46,3 +36,16 @@ SRC += lib/keyball/keyball.c
 # Disable other features to squeeze firmware size
 SPACE_CADET_ENABLE = no
 MAGIC_ENABLE = no
+
+# BLE Micro Pro
+MCU = cortex-m4
+BOOTLOADER = custom
+MCU_LDSCRIPT = nrf52840_bmp
+CUSTOM_MATRIX = yes # This flag should be on for nrf52
+PLATFORM_KEY = bmp
+EEPROM_DRIVER = custom
+SPLIT_KEYBOARD = no
+DYNAMIC_KEYMAP_ENABLE = yes
+RAW_ENABLE = yes
+MOUSE_SHARED_EP = no
+SRC += lib/bmp/keyboard.c # Support bmp keyboard 
