@@ -226,6 +226,21 @@
       "name": "AML_D50",
       "title": "Decrease 50ms automatic mouse layer timeout(min 1=250ms)",
       "shortName": "AML\nD50"
+    },
+    {
+      "name": "SSNP_VRT",
+      "title": "Set scroll snap mode as vertical",
+      "shortName": "SSNP\nVRT"
+    },
+    {
+      "name": "SSNP_HOR",
+      "title": "Set scroll snap mode as horizontal",
+      "shortName": "SSNP\nHOR"
+    },
+    {
+      "name": "SSNP_FRE",
+      "title": "Set scroll snap mode as disable (free scroll)",
+      "shortName": "SSNP\nFRE"
     }
   ]
 }

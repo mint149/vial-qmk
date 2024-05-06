@@ -4,16 +4,10 @@ LTO_ENABLE = yes
 # Build Options
 BOOTMAGIC_ENABLE = no       # Enable Bootmagic Lite
 EXTRAKEY_ENABLE = no        # Audio control and System control
-CONSOLE_ENABLE = no         # Console for debug
 COMMAND_ENABLE = no         # Commands for debug and configuration
 NKRO_ENABLE = no            # Enable N-Key Rollover
 BACKLIGHT_ENABLE = no       # Enable keyboard backlight functionality
 AUDIO_ENABLE = no           # Audio output
-
-# Optical sensor driver for trackball.
-POINTING_DEVICE_ENABLE = yes
-POINTING_DEVICE_DRIVER = custom
-SRC += drivers/pmw3360/bmp_pmw3360.c
 
 # This is unnecessary for processing KC_MS_BTN*.
 MOUSEKEY_ENABLE = no
@@ -48,4 +42,8 @@ SPLIT_KEYBOARD = no
 DYNAMIC_KEYMAP_ENABLE = yes
 RAW_ENABLE = yes
 MOUSE_SHARED_EP = no
+CONSOLE_ENABLE = yes # Console for debug
 SRC += lib/bmp/keyboard.c # Support bmp keyboard 
+POINTING_DEVICE_ENABLE = yes
+POINTING_DEVICE_DRIVER = custom
+SRC += drivers/pmw3360/bmp_pmw3360.c
