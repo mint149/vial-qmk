@@ -87,3 +87,17 @@ zip: $(BUILD_DIR)/$(TARGET).bin
 		echo 'ERROR: nrfutil is not found'; exit 1;\
 	fi
 	$(NRFUTIL) pkg generate --debug-mode --hw-version 52 --sd-req 0xA9 --application $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).zip
+
+nrfutil: zip
+	printf "Detecting USB port, put your controller into dfu-mode now."; \
+	while [ -z $$USB ]; do \
+		sleep 0.5; \
+		printf "."; \
+		ls /dev/tty* > /tmp/2; \
+		USB=`ls /dev/tty.* | grep usbmodem | grep -v vial`; \
+	done; \
+	echo ""; \
+	echo "Detected controller on USB port at $$USB"; \
+	sleep 1; \
+	echo "Programming Started"; \
+	$(NRFUTIL) dfu usb-serial -pkg $(BUILD_DIR)/$(TARGET).zip -p $$USB; \
