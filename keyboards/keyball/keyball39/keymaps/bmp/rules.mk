@@ -1,5 +1,7 @@
 RGBLIGHT_ENABLE = yes
 
-OLED_ENABLE = yes
+OLED_ENABLE = no
 
 VIA_ENABLE = yes
+VIAL_ENABLE = yes
+VIAL_INSECURE = yes
