@@ -95,7 +95,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define KEYBALL_OLED_MAX_PRESSING_KEYCODES 6
 
 // BLE Micro Pro
-#define MATRIX_SCAN_TIME_MS 40
+#define MATRIX_SCAN_TIME_MS 5
 
 //////////////////////////////////////////////////////////////////////////////
 // Types
