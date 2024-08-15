@@ -363,7 +363,7 @@ void pointing_device_init_user(void) {
 
 // トラックボールのセンサ値取得時に呼ばれるイベント
 report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
-	if(isScrollInvert){
+	if(!isScrollInvert){
 	    mouse_report.v = mouse_report.v * -1;
 	}
 
