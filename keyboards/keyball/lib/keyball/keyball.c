@@ -269,6 +269,9 @@ static inline bool should_report(void) {
 report_mouse_t pointing_device_driver_get_report(report_mouse_t rep) {
     // report mouse event, if keyboard is primary.
     if (is_bmp_keyboard_master() && should_report()) {
+        // Reset total motion tracker.
+        keyball.total_motion.x = 0;
+        keyball.total_motion.y = 0;
         // modify mouse report by PMW3360 motion.
         motion_to_mouse(&keyball.this_motion, &rep, is_bmp_keyboard_left(), keyball.scroll_mode);
         motion_to_mouse(&keyball.that_motion, &rep, !is_bmp_keyboard_left(), keyball.scroll_mode ^ keyball.this_have_ball);
@@ -793,4 +796,10 @@ void matrix_scan_kb() {
     }
 
     matrix_scan_user();
+}
+
+bool auto_mouse_activation(report_mouse_t mouse_report) {
+    keyball.total_motion.x += mouse_report.x;
+    keyball.total_motion.y += mouse_report.y;
+    return abs(keyball.total_motion.x) > KEYBALL_AUTO_MOUSE_THRESHOLD || abs(keyball.total_motion.y) > KEYBALL_AUTO_MOUSE_THRESHOLD || mouse_report.buttons;
 }
