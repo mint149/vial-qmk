@@ -36,6 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PREVTAB LCTL(LSFT(KC_TAB))
 #define NEXTXLS LCTL(KC_PGDN)
 #define PREVXLS LCTL(KC_PGUP)
+#define MOADJ MO(_ADJUST)
 
 #define ANTI_SLEEP_INTERVAL 10000
 
@@ -72,34 +73,34 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
 		KC_LCTL, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_ENT ,
 		KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,                   KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_QUOT,
-											DM_PLY1, KC_LGUI, KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, KC_PSCR
+											MOADJ  , KC_LGUI, KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, MOADJ
 	),
 
 	[_MAC] = LAYOUT_universal(
 		KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
 		KC_LGUI, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_ENT ,
 		KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,                   KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_QUOT,
-											DM_PLY1, KC_LALT, KC_LGUI, IMEOFF , KC_SPC , KC_LCTL, IMEON  , NOSPACE, NOSPACE, DELETED
+											MOADJ  , KC_LALT, KC_LGUI, IMEOFF , KC_SPC , KC_LCTL, IMEON  , NOSPACE, NOSPACE, MOADJ
 	),
 
 	[_LOWER] = LAYOUT_universal(
 		KC_ESC , _______, KC_F2  , KC_F3  , KC_F4  , KC_F5  ,                   KC_1   , KC_2   , KC_3   , KC_4   , KC_5   , KC_DEL , 
 		_______, KC_F6  , KC_F7  , KC_F8  , KC_F9  , KC_F10 ,                   KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , _______, 
 		_______, KC_F11 , KC_F12 , _______, _______, _______,                   KC_MINS, KC_EQL , KC_LBRC, KC_RBRC, KC_BSLS, KC_GRV ,
-											_______, _______, _______, _______, _______, _______, _______, _______, _______, TGL_MS
+											_______, _______, _______, _______, _______, _______, _______, _______, _______, _______
 	),
 
 	[_RAISE] = LAYOUT_universal(
 		KC_ESC , _______, _______, _______, _______, _______,                   KC_HOME, PREVXLS, NEXTXLS,  KC_END, _______, KC_DEL , 
-		_______,CPI_D100,SCRL_DVI,SCRL_DVD,CPI_I100,KBC_SAVE,                   KC_LEFT, KC_DOWN, KC_UP  ,KC_RIGHT, _______, _______, 
+		_______, _______, _______, _______, _______, _______,                   KC_LEFT, KC_DOWN, KC_UP  ,KC_RIGHT, _______, _______, 
 		_______, _______, _______, _______, _______, _______,                   KC_MINS, KC_EQL , KC_LBRC, KC_RBRC, KC_BSLS, KC_GRV ,
 											DM_REC1, _______, _______, _______, _______, _______, _______, _______, _______, _______
 	),
 
 	[_ADJUST] = LAYOUT_universal(
-		_______, _______, WINDOWS, _______, _______, _______,                   _______, SEL_USB, ADV_ID0, ADV_ID1, ADV_ID2, ADV_ID3, 
+		_______, ADV_ID0, WINDOWS, _______, _______, _______,                   _______, SEL_USB, ADV_ID0, ADV_ID1, ADV_ID2, ADV_ID3, 
 		_______, AD_WO_L,TGL_SCRL, _______, _______, _______,                   _______, TGL_JIS, ADV_ID4, ADV_ID5, ADV_ID6, ADV_ID7, 
-		TGL_AS , _______, _______, _______, _______, SEL_BLE,                   _______,     MAC, _______, _______, _______, _______, 
+		TGL_AS , _______, _______, _______, _______, SEL_BLE,                   SEL_BLE,     MAC, _______, _______, _______, _______, 
 											_______, _______, _______, _______, _______, _______, _______, _______, _______, TGL_LOCK
 	),
 
@@ -169,15 +170,15 @@ void oledkit_render_info_user(void) {
 
 	switch(pairingId){
 		case 0:
-			oled_write_P(PSTR("BT0:Macbook"), false);
+			oled_write_P(PSTR("BT0:Slave  "), false);
 			break;
 
 		case 1:
-			oled_write_P(PSTR("BT1:iPad   "), false);
+			oled_write_P(PSTR("BT1:Macbook"), false);
 			break;
 
 		case 2:
-			oled_write_P(PSTR("BT2:Work   "), false);
+			oled_write_P(PSTR("BT2:iPad   "), false);
 			break;
 
 		case 3:
@@ -189,15 +190,15 @@ void oledkit_render_info_user(void) {
 			break;
 
 		case 5:
-			oled_write_P(PSTR("BT5:AVP    "), false);
+			oled_write_P(PSTR("BT5:Work   "), false);
 			break;
 
 		case 6:
-			oled_write_P(PSTR("BT6:WinPC  "), false);
+			oled_write_P(PSTR("BT6:AVP    "), false);
 			break;
 
 		case 7:
-			oled_write_P(PSTR("BT7:-      "), false);
+			oled_write_P(PSTR("BT7:WinPC  "), false);
 			break;
 
 		default:
