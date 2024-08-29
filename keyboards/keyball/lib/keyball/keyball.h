@@ -59,7 +59,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /// Threshold of mouse movement before layer change occurs
 #ifndef KEYBALL_AUTO_MOUSE_THRESHOLD
-#    define KEYBALL_AUTO_MOUSE_THRESHOLD 2
+#    define KEYBALL_AUTO_MOUSE_THRESHOLD 1
 #endif
 
 /// Specify SROM ID to be uploaded PMW3360DW (optical sensor).  It will be
@@ -240,6 +240,8 @@ void keyball_oled_render_keyinfo(void);
 /// OLED.  It shows layer mask with number (1~f) for active layers and '_' for
 /// inactive layers.
 void keyball_oled_render_layerinfo(void);
+
+keyball_motion_t keyball_get_total_move(void);
 
 /// keyball_get_scroll_mode gets current scroll mode.
 bool keyball_get_scroll_mode(void);

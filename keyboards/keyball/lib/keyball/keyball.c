@@ -509,6 +509,10 @@ void keyball_oled_render_layerinfo(void) {
 //////////////////////////////////////////////////////////////////////////////
 // Public API functions
 
+keyball_motion_t keyball_get_total_move(void) {
+    return keyball.total_motion;
+}
+
 bool keyball_get_scroll_mode(void) {
     return keyball.scroll_mode;
 }

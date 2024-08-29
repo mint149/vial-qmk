@@ -155,6 +155,34 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
 #include "lib/oledkit/oledkit.h"
 
+static const char *format_4d(int8_t d) {
+    static char buf[5] = {0}; // max width (4) + NUL (1)
+    char        lead   = ' ';
+    if (d < 0) {
+        d    = -d;
+        lead = '-';
+    }
+    buf[3] = (d % 10) + '0';
+    d /= 10;
+    if (d == 0) {
+        buf[2] = lead;
+        lead   = ' ';
+    } else {
+        buf[2] = (d % 10) + '0';
+        d /= 10;
+    }
+    if (d == 0) {
+        buf[1] = lead;
+        lead   = ' ';
+    } else {
+        buf[1] = (d % 10) + '0';
+        d /= 10;
+    }
+    buf[0] = lead;
+    return buf;
+}
+
+
 void oledkit_render_info_user(void) {
 	if(isInit){
 		set_auto_mouse_enable(true);
@@ -162,11 +190,16 @@ void oledkit_render_info_user(void) {
 		isInit = false;
 	}
 
-	if(isScrollInvert){
-    	oled_write_P(PSTR("SCRL:Rev  "), false);
-	}else{
-    	oled_write_P(PSTR("SCRL:Nml  "), false);
-	}
+	keyball_motion_t xxx = keyball_get_total_move();
+
+    oled_write(format_4d(xxx.x), false);
+    oled_write(format_4d(xxx.y), false);
+
+	// if(isScrollInvert){
+    // 	oled_write_P(PSTR("SCRL:Rev  "), false);
+	// }else{
+    // 	oled_write_P(PSTR("SCRL:Nml  "), false);
+	// }
 
 	switch(pairingId){
 		case 0:
