@@ -51,6 +51,7 @@ enum custom_keycodes {
 	TGL_MS,
 	TGL_LOCK,
 	TGL_SCRL,
+	TGL_OLED,
 };
 
 bool isInit = true;
@@ -73,14 +74,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
 		KC_LCTL, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_ENT ,
 		KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,                   KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_QUOT,
-											MOADJ  , KC_LGUI, KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, MOADJ
+											MOADJ  , KC_LGUI, KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, TGL_OLED
 	),
 
 	[_MAC] = LAYOUT_universal(
 		KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
 		KC_LGUI, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_ENT ,
 		KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,                   KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_QUOT,
-											MOADJ  , KC_LALT, KC_LGUI, IMEOFF , KC_SPC , KC_LCTL, IMEON  , NOSPACE, NOSPACE, MOADJ
+											MOADJ  , KC_LALT, KC_LGUI, IMEOFF , KC_SPC , KC_LCTL, IMEON  , NOSPACE, NOSPACE, TGL_OLED
 	),
 
 	[_LOWER] = LAYOUT_universal(
@@ -181,7 +182,6 @@ static const char *format_4d(int8_t d) {
     buf[0] = lead;
     return buf;
 }
-
 
 void oledkit_render_info_user(void) {
 	if(isInit){
@@ -582,6 +582,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 		case TGL_SCRL:
 			if (record->event.pressed) {
 				isScrollInvert = !isScrollInvert;
+			}
+			return false;
+
+		case TGL_OLED:
+			if (record->event.pressed) {
+				if(getIsOledEnable()){
+					oled_off();
+					setIsOledEnable(false);
+				}else{
+					setIsOledEnable(true);
+					oled_on();
+				}
 			}
 			return false;
 

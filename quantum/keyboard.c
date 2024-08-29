@@ -145,6 +145,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #    include "wpm.h"
 #endif
 
+// OLED有効フラグ falseだとOLED_ENABLE=falseの時のようにOLED関連処理をスキップする
+bool isOledEnable = true;
+bool getIsOledEnable(void){
+    return isOledEnable;
+}
+void setIsOledEnable(bool param){
+    isOledEnable = param;
+}
+
 static uint32_t last_input_modification_time = 0;
 uint32_t        last_input_activity_time(void) {
     return last_input_modification_time;
@@ -696,10 +705,12 @@ void keyboard_task(void) {
 #endif
 
 #ifdef OLED_ENABLE
-    oled_task();
+    if(isOledEnable){
+        oled_task();
 #    if OLED_TIMEOUT > 0
-    // Wake up oled if user is using those fabulous keys or spinning those encoders!
-    if (activity_has_occurred) oled_on();
+        // Wake up oled if user is using those fabulous keys or spinning those encoders!
+        if (activity_has_occurred) oled_on();
+    }
 #    endif
 #endif
 

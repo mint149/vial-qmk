@@ -112,6 +112,10 @@ void housekeeping_task(void);      // To be executed by the main loop in each ba
 void housekeeping_task_kb(void);   // To be overridden by keyboard-level code
 void housekeeping_task_user(void); // To be overridden by user/keymap-level code
 
+// 自作変数であるisOledEnableの制御用メソッド
+void setIsOledEnable(bool param);
+bool getIsOledEnable(void);
+
 uint32_t last_input_activity_time(void);    // Timestamp of the last matrix or encoder or pointing device activity
 uint32_t last_input_activity_elapsed(void); // Number of milliseconds since the last matrix or encoder or pointing device activity
 
