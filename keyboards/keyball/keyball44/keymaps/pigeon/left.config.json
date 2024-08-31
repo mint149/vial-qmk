@@ -22,14 +22,14 @@
     "mode": "SPLIT_SLAVE",
     "startup": 1,
     "peripheral": {
-      "max_interval": 15,
-      "min_interval": 15,
+      "max_interval": 10,
+      "min_interval": 10,
       "slave_latency": 10
     },
     "central": {
-      "max_interval": 30,
-      "min_interval": 30,
-      "slave_latency": 30
+      "max_interval": 10,
+      "min_interval": 10,
+      "slave_latency": 10
     },
     "led": {
       "pin": 1,
