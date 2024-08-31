@@ -287,6 +287,17 @@ void oledkit_render_logo_user(void){
 	}
 }
 
+// マウスキー判定となるキーを追加するためのメソッド
+bool is_mouse_record_user(uint16_t keycode, keyrecord_t* record) {
+    switch(keycode) {
+        case KC_TAB:
+            return true;
+        default:
+            return false;
+    }
+	return false;
+}
+
 // メイン側OLEDの表示制御
 void oledkit_render_info_user(void) {
 	if(isInit){
