@@ -146,12 +146,6 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 	return state;
 }
 
-// layer_state_t layer_state_set_user(layer_state_t state) {
-//     // Auto enable scroll mode when the highest layer is 3
-//     keyball_set_scroll_mode(get_highest_layer(state) == 3);
-//     return state;
-// }
-
 #ifdef OLED_ENABLE
 
 #include "lib/oledkit/oledkit.h"
@@ -183,6 +177,117 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 //     return buf;
 // }
 
+// サブ側OLEDにもキー入力情報を送るためのメソッド
+bool should_process_keypress(void) { return true; }
+
+// サブ側OLEDの表示制御
+void oledkit_render_logo_user(void){
+	// ひとまずメイン側と同じ表示にする
+	// オートマウスレイヤの閾値確認用
+	// keyball_motion_t xxx = keyball_get_total_move();
+    // oled_write(format_4d(xxx.x), false);
+    // oled_write(format_4d(xxx.y), false);
+
+	if(isScrollInvert){
+    	oled_write_P(PSTR("SCRL:Rev  "), false);
+	}else{
+    	oled_write_P(PSTR("SCRL:Nml  "), false);
+	}
+
+	switch(pairingId){
+		case 0:
+			oled_write_P(PSTR("BT0:Slave  "), false);
+			break;
+
+		case 1:
+			oled_write_P(PSTR("BT1:Macbook"), false);
+			break;
+
+		case 2:
+			oled_write_P(PSTR("BT2:iPad   "), false);
+			break;
+
+		case 3:
+			oled_write_P(PSTR("BT3:iPhone "), false);
+			break;
+
+		case 4:
+			oled_write_P(PSTR("BT4:Fold   "), false);
+			break;
+
+		case 5:
+			oled_write_P(PSTR("BT5:Work   "), false);
+			break;
+
+		case 6:
+			oled_write_P(PSTR("BT6:AVP    "), false);
+			break;
+
+		case 7:
+			oled_write_P(PSTR("BT7:WinPC  "), false);
+			break;
+
+		default:
+		    oled_write_P(PSTR("USB:       "), false);
+			break;
+	}
+
+	oled_write_P(PSTR("Layer:"), false);
+	switch (get_highest_layer(layer_state | default_layer_state)) {
+		case _MAC:
+			oled_write_P(PSTR("Mac   "), false);
+			break;
+		case _WINDOWS:
+			oled_write_P(PSTR("Win   "), false);
+			break;
+		case _LOWER:
+			oled_write_P(PSTR("Lower "), false);
+			break;
+		case _RAISE:
+			oled_write_P(PSTR("Raise "), false);
+			break;
+		case _ADJUST:
+			oled_write_P(PSTR("Adjust"), false);
+			break;
+		case _MOUSE:
+			oled_write_P(PSTR("Mouse "), false);
+			break;
+		case _SCROLL:
+			oled_write_P(PSTR("Scroll"), false);
+			break;
+		default:
+			oled_write_P(PSTR("Undef "), false);
+			break;
+	}
+
+	oled_write_P(PSTR(" :"), false);
+
+	if(isJisMode){
+		oled_write_P(PSTR("JIS"), false);
+	}else{
+		oled_write_P(PSTR(" US"), false);
+	}
+
+	if(isRecording){
+		oled_write_P(PSTR(" REC"), false);
+	}else{
+		oled_write_P(PSTR("    "), false);
+	}
+
+	if(isAntiSleepOn){
+		oled_write_P(PSTR("--- ANTI SLEEP:ON ---"), false);
+	}else{
+		oled_write_P(PSTR("                     "), false);
+	}
+	
+	if(isKeyDisabled){
+		oled_write_P(PSTR("--- INPUT LOCK:ON ---"), false);
+	}else{
+		oled_write_P(PSTR("                     "), false);
+	}
+}
+
+// メイン側OLEDの表示制御
 void oledkit_render_info_user(void) {
 	if(isInit){
 		set_auto_mouse_enable(true);
