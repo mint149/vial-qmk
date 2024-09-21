@@ -46,6 +46,7 @@ keyball_t keyball = {
 
     .this_motion = {0},
     .that_motion = {0},
+    .auto_mouse_threshold = 3,
 
     .cpi_value   = 0,
     .cpi_changed = false,
@@ -270,8 +271,7 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t rep) {
     // report mouse event, if keyboard is primary.
     if (is_bmp_keyboard_master() && should_report()) {
         // Reset total motion tracker.
-        keyball.total_motion.x = 0;
-        keyball.total_motion.y = 0;
+        keyball.total_motion = 0;
         // modify mouse report by PMW3360 motion.
         motion_to_mouse(&keyball.this_motion, &rep, is_bmp_keyboard_left(), keyball.scroll_mode);
         motion_to_mouse(&keyball.that_motion, &rep, !is_bmp_keyboard_left(), keyball.scroll_mode ^ keyball.this_have_ball);
@@ -509,7 +509,15 @@ void keyball_oled_render_layerinfo(void) {
 //////////////////////////////////////////////////////////////////////////////
 // Public API functions
 
-keyball_motion_t keyball_get_total_move(void) {
+uint8_t keyball_get_auto_mouse_threshold(void) {
+    return keyball.auto_mouse_threshold;
+}
+
+void keyball_set_auto_mouse_threshold(uint8_t param) {
+    keyball.auto_mouse_threshold = param;
+}
+
+uint8_t keyball_get_total_move(void) {
     return keyball.total_motion;
 }
 
@@ -803,7 +811,6 @@ void matrix_scan_kb() {
 }
 
 bool auto_mouse_activation(report_mouse_t mouse_report) {
-    keyball.total_motion.x += mouse_report.x;
-    keyball.total_motion.y += mouse_report.y;
-    return abs(keyball.total_motion.x) > KEYBALL_AUTO_MOUSE_THRESHOLD || abs(keyball.total_motion.y) > KEYBALL_AUTO_MOUSE_THRESHOLD || mouse_report.buttons;
+    keyball.total_motion += (abs(mouse_report.x)+abs(mouse_report.y));
+    return keyball.total_motion > keyball.auto_mouse_threshold || mouse_report.buttons;
 }

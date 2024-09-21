@@ -52,6 +52,10 @@ enum custom_keycodes {
 	TGL_LOCK,
 	TGL_SCRL,
 	TGL_OLED,
+	// オートマウスレイヤに入る閾値を+1
+	AMT_P1,
+	// オートマウスレイヤに入る閾値を-1
+	AMT_M1,
 };
 
 bool isInit = true;
@@ -92,7 +96,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 
 	[_RAISE] = LAYOUT_universal(
-		KC_ESC , _______, _______, _______, _______, _______,                   KC_HOME, PREVXLS, NEXTXLS,  KC_END,TGL_OLED, KC_DEL , 
+		KC_ESC , AMT_M1, AMT_P1, _______, _______, _______,                   KC_HOME, PREVXLS, NEXTXLS,  KC_END,TGL_OLED, KC_DEL , 
 		_______, _______, _______, _______, _______, _______,                   KC_LEFT, KC_DOWN, KC_UP  ,KC_RIGHT, _______, _______, 
 		_______, _______, _______, _______, _______, _______,                   KC_MINS, KC_EQL , KC_LBRC, KC_RBRC, KC_BSLS, KC_GRV ,
 											DM_REC1, _______, _______, _______, _______, _______, _______, _______, _______, _______
@@ -150,32 +154,32 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
 #include "lib/oledkit/oledkit.h"
 
-// static const char *format_4d(int8_t d) {
-//     static char buf[5] = {0}; // max width (4) + NUL (1)
-//     char        lead   = ' ';
-//     if (d < 0) {
-//         d    = -d;
-//         lead = '-';
-//     }
-//     buf[3] = (d % 10) + '0';
-//     d /= 10;
-//     if (d == 0) {
-//         buf[2] = lead;
-//         lead   = ' ';
-//     } else {
-//         buf[2] = (d % 10) + '0';
-//         d /= 10;
-//     }
-//     if (d == 0) {
-//         buf[1] = lead;
-//         lead   = ' ';
-//     } else {
-//         buf[1] = (d % 10) + '0';
-//         d /= 10;
-//     }
-//     buf[0] = lead;
-//     return buf;
-// }
+static const char *format_4d(int8_t d) {
+    static char buf[5] = {0}; // max width (4) + NUL (1)
+    char        lead   = ' ';
+    if (d < 0) {
+        d    = -d;
+        lead = '-';
+    }
+    buf[3] = (d % 10) + '0';
+    d /= 10;
+    if (d == 0) {
+        buf[2] = lead;
+        lead   = ' ';
+    } else {
+        buf[2] = (d % 10) + '0';
+        d /= 10;
+    }
+    if (d == 0) {
+        buf[1] = lead;
+        lead   = ' ';
+    } else {
+        buf[1] = (d % 10) + '0';
+        d /= 10;
+    }
+    buf[0] = lead;
+    return buf;
+}
 
 // サブ側OLEDにもキー入力情報を送るためのメソッド
 bool should_process_keypress(void) { return true; }
@@ -184,15 +188,18 @@ bool should_process_keypress(void) { return true; }
 void oledkit_render_logo_user(void){
 	// ひとまずメイン側と同じ表示にする
 	// オートマウスレイヤの閾値確認用
-	// keyball_motion_t xxx = keyball_get_total_move();
-    // oled_write(format_4d(xxx.x), false);
-    // oled_write(format_4d(xxx.y), false);
+	// oled_write_P(PSTR("T:"), false);
+	// uint8_t totalMove = keyball_get_total_move();
+    // oled_write(format_4d(totalMove), false);
+	// oled_write_P(PSTR(" N:"), false);
+	// uint8_t amThreshold = keyball_get_auto_mouse_threshold();
+    // oled_write(format_4d(amThreshold), false);
 
-	if(isScrollInvert){
-    	oled_write_P(PSTR("SCRL:Rev  "), false);
-	}else{
-    	oled_write_P(PSTR("SCRL:Nml  "), false);
-	}
+	// if(isScrollInvert){
+    // 	oled_write_P(PSTR("SCRL:Rev  "), false);
+	// }else{
+    // 	oled_write_P(PSTR("SCRL:Nml  "), false);
+	// }
 
 	switch(pairingId){
 		case 0:
@@ -311,12 +318,18 @@ void oledkit_render_info_user(void) {
     // oled_write(format_4d(xxx.x), false);
     // oled_write(format_4d(xxx.y), false);
 
-	if(isScrollInvert){
-    	oled_write_P(PSTR("SCRL:Rev  "), false);
-	}else{
-    	oled_write_P(PSTR("SCRL:Nml  "), false);
-	}
-
+	oled_write_P(PSTR("T:"), false);
+	uint8_t totalMove = keyball_get_total_move();
+    oled_write(format_4d(totalMove), false);
+	oled_write_P(PSTR(" N:"), false);
+	uint8_t amThreshold = keyball_get_auto_mouse_threshold();
+    oled_write(format_4d(amThreshold), false);
+	// if(isScrollInvert){
+    // 	oled_write_P(PSTR("SCRL:Rev  "), false);
+	// }else{
+    // 	oled_write_P(PSTR("SCRL:Nml  "), false);
+	// }
+/*
 	switch(pairingId){
 		case 0:
 			oled_write_P(PSTR("BT0:Slave  "), false);
@@ -354,7 +367,7 @@ void oledkit_render_info_user(void) {
 		    oled_write_P(PSTR("USB:       "), false);
 			break;
 	}
-
+*/
 	oled_write_P(PSTR("Layer:"), false);
 	switch (get_highest_layer(layer_state | default_layer_state)) {
 		case _MAC:
@@ -712,6 +725,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 				}
 			}
 			return false;
+
+		case AMT_M1:
+			if (record->event.pressed) {
+				keyball_set_auto_mouse_threshold(keyball_get_auto_mouse_threshold() - 1);
+			}
+			return true;
+
+		case AMT_P1:
+			if (record->event.pressed) {
+				keyball_set_auto_mouse_threshold(keyball_get_auto_mouse_threshold() + 1);
+			}
+			return true;
 
 		case AD_WO_L:
 			return true;

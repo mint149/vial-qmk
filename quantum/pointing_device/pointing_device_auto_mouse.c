@@ -240,7 +240,7 @@ void pointing_device_task_auto_mouse(report_mouse_t mouse_report) {
             layer_on((AUTO_MOUSE_TARGET_LAYER));
         }
     } else if (layer_state_is((AUTO_MOUSE_TARGET_LAYER)) && timer_elapsed(auto_mouse_context.timer.active) > auto_mouse_context.config.timeout) {
-        layer_off((AUTO_MOUSE_TARGET_LAYER));
+        // layer_off((AUTO_MOUSE_TARGET_LAYER));
         auto_mouse_context.timer.active = 0;
     }
 }

@@ -59,7 +59,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /// Threshold of mouse movement before layer change occurs
 #ifndef KEYBALL_AUTO_MOUSE_THRESHOLD
-#    define KEYBALL_AUTO_MOUSE_THRESHOLD 1
+#    define KEYBALL_AUTO_MOUSE_THRESHOLD 3
 #endif
 
 /// Specify SROM ID to be uploaded PMW3360DW (optical sensor).  It will be
@@ -174,7 +174,8 @@ typedef struct {
 
     keyball_motion_t this_motion;
     keyball_motion_t that_motion;
-    keyball_motion_t total_motion;
+    uint8_t total_motion;
+    uint8_t auto_mouse_threshold;
 
     uint8_t cpi_value;
     bool    cpi_changed;
@@ -241,7 +242,9 @@ void keyball_oled_render_keyinfo(void);
 /// inactive layers.
 void keyball_oled_render_layerinfo(void);
 
-keyball_motion_t keyball_get_total_move(void);
+uint8_t keyball_get_auto_mouse_threshold(void);
+void keyball_set_auto_mouse_threshold(uint8_t param);
+uint8_t keyball_get_total_move(void);
 
 /// keyball_get_scroll_mode gets current scroll mode.
 bool keyball_get_scroll_mode(void);
