@@ -186,21 +186,7 @@ bool should_process_keypress(void) { return true; }
 
 // サブ側OLEDの表示制御
 void oledkit_render_logo_user(void){
-	// ひとまずメイン側と同じ表示にする
-	// オートマウスレイヤの閾値確認用
-	// oled_write_P(PSTR("T:"), false);
-	// uint8_t totalMove = keyball_get_total_move();
-    // oled_write(format_4d(totalMove), false);
-	// oled_write_P(PSTR(" N:"), false);
-	// uint8_t amThreshold = keyball_get_auto_mouse_threshold();
-    // oled_write(format_4d(amThreshold), false);
-
-	// if(isScrollInvert){
-    // 	oled_write_P(PSTR("SCRL:Rev  "), false);
-	// }else{
-    // 	oled_write_P(PSTR("SCRL:Nml  "), false);
-	// }
-
+	// 1行目 ----------------------------------------------------------
 	switch(pairingId){
 		case 0:
 			oled_write_P(PSTR("BT0:Slave  "), false);
@@ -239,6 +225,7 @@ void oledkit_render_logo_user(void){
 			break;
 	}
 
+	// 2行目 ----------------------------------------------------------
 	oled_write_P(PSTR("Layer:"), false);
 	switch (get_highest_layer(layer_state | default_layer_state)) {
 		case _MAC:
@@ -267,31 +254,8 @@ void oledkit_render_logo_user(void){
 			break;
 	}
 
-	oled_write_P(PSTR(" :"), false);
-
-	if(isJisMode){
-		oled_write_P(PSTR("JIS"), false);
-	}else{
-		oled_write_P(PSTR(" US"), false);
-	}
-
-	if(isRecording){
-		oled_write_P(PSTR(" REC"), false);
-	}else{
-		oled_write_P(PSTR("    "), false);
-	}
-
-	if(isAntiSleepOn){
-		oled_write_P(PSTR("--- ANTI SLEEP:ON ---"), false);
-	}else{
-		oled_write_P(PSTR("                     "), false);
-	}
-	
-	if(isKeyDisabled){
-		oled_write_P(PSTR("--- INPUT LOCK:ON ---"), false);
-	}else{
-		oled_write_P(PSTR("                     "), false);
-	}
+	// 3行目 ----------------------------------------------------------
+	// 4行目 ----------------------------------------------------------
 }
 
 // マウスキー判定となるキーを追加するためのメソッド
@@ -313,23 +277,13 @@ void oledkit_render_info_user(void) {
 		isInit = false;
 	}
 
-	// オートマウスレイヤの閾値確認用
-	// keyball_motion_t xxx = keyball_get_total_move();
-    // oled_write(format_4d(xxx.x), false);
-    // oled_write(format_4d(xxx.y), false);
+	// 1行目 ----------------------------------------------------------
+	if(isScrollInvert){
+    	oled_write_P(PSTR("SCRL:Rev  "), false);
+	}else{
+    	oled_write_P(PSTR("SCRL:Nml "), false);
+	}
 
-	oled_write_P(PSTR("T:"), false);
-	uint8_t totalMove = keyball_get_total_move();
-    oled_write(format_4d(totalMove), false);
-	oled_write_P(PSTR(" N:"), false);
-	uint8_t amThreshold = keyball_get_auto_mouse_threshold();
-    oled_write(format_4d(amThreshold), false);
-	// if(isScrollInvert){
-    // 	oled_write_P(PSTR("SCRL:Rev  "), false);
-	// }else{
-    // 	oled_write_P(PSTR("SCRL:Nml  "), false);
-	// }
-/*
 	switch(pairingId){
 		case 0:
 			oled_write_P(PSTR("BT0:Slave  "), false);
@@ -367,7 +321,8 @@ void oledkit_render_info_user(void) {
 		    oled_write_P(PSTR("USB:       "), false);
 			break;
 	}
-*/
+
+	// 2行目 ----------------------------------------------------------
 	oled_write_P(PSTR("Layer:"), false);
 	switch (get_highest_layer(layer_state | default_layer_state)) {
 		case _MAC:
@@ -410,18 +365,35 @@ void oledkit_render_info_user(void) {
 		oled_write_P(PSTR("    "), false);
 	}
 
-	if(isAntiSleepOn){
-		oled_write_P(PSTR("--- ANTI SLEEP:ON ---"), false);
-	}else{
-		oled_write_P(PSTR("                     "), false);
-	}
-	
-	if(isKeyDisabled){
-		oled_write_P(PSTR("--- INPUT LOCK:ON ---"), false);
-	}else{
-		oled_write_P(PSTR("                     "), false);
-	}
+	// 3行目 ----------------------------------------------------------
+	// オートマウスレイヤの閾値確認用
+	oled_write_P(PSTR("AMT:"), false);
+	uint8_t amThreshold = keyball_get_auto_mouse_threshold();
+    oled_write(format_4d(amThreshold), false);
 
+	oled_write_P(PSTR(" TM:"), false);
+	uint8_t totalMove = keyball_get_total_move();
+    oled_write(format_4d(totalMove), false);
+
+	oled_write_P(PSTR(" ["), false);
+	if(isAntiSleepOn){
+		oled_write_P(PSTR("AS"), false);
+	}else{
+		oled_write_P(PSTR("  "), false);
+	}
+	oled_write_P(PSTR("/"), false);
+	if(isKeyDisabled){
+		oled_write_P(PSTR("IL"), false);
+	}else{
+		oled_write_P(PSTR("  "), false);
+	}
+	oled_write_P(PSTR("] "), false);
+	
+	// 4行目 ----------------------------------------------------------
+    oled_write_P(PSTR("CP:"), false);
+    oled_write(format_4d(keyball_get_cpi()) + 1, false);
+    oled_write_P(PSTR("00 SD:"), false);
+    oled_write_char(keyball_get_scroll_div(), false);
 }
 #endif
 
