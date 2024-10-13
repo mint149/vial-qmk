@@ -96,7 +96,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 	),
 
 	[_RAISE] = LAYOUT_universal(
-		KC_ESC , AMT_M1, AMT_P1, _______, _______, _______,                   KC_HOME, PREVXLS, NEXTXLS,  KC_END,TGL_OLED, KC_DEL , 
+		KC_ESC ,  AMT_M1,  AMT_P1, _______, _______, _______,                   KC_HOME, PREVXLS, NEXTXLS,  KC_END,TGL_OLED, KC_DEL , 
 		_______, _______, _______, _______, _______, _______,                   KC_LEFT, KC_DOWN, KC_UP  ,KC_RIGHT, _______, _______, 
 		_______, _______, _______, _______, _______, _______,                   KC_MINS, KC_EQL , KC_LBRC, KC_RBRC, KC_BSLS, KC_GRV ,
 											DM_REC1, _______, _______, _______, _______, _______, _______, _______, _______, _______
@@ -181,6 +181,26 @@ static const char *format_4d(int8_t d) {
     return buf;
 }
 
+static const char *format_3d(int8_t d) {
+    static char buf[4] = {0}; // max width (3) + NUL (1)
+    char        lead   = ' ';
+    if (d < 0) {
+        d    = -d;
+        lead = '-';
+    }
+    buf[2] = (d % 10) + '0';
+    d /= 10;
+    if (d == 0) {
+        buf[1] = lead;
+        lead   = ' ';
+    } else {
+        buf[1] = (d % 10) + '0';
+        d /= 10;
+    }
+    buf[0] = lead;
+    return buf;
+}
+
 // サブ側OLEDにもキー入力情報を送るためのメソッド
 bool should_process_keypress(void) { return true; }
 
@@ -189,41 +209,42 @@ void oledkit_render_logo_user(void){
 	// 1行目 ----------------------------------------------------------
 	switch(pairingId){
 		case 0:
-			oled_write_P(PSTR("BT0:Slave  "), false);
+			oled_write_P(PSTR("BT0:Slave   "), false);
 			break;
 
 		case 1:
-			oled_write_P(PSTR("BT1:Macbook"), false);
+			oled_write_P(PSTR("BT1:Macbook "), false);
 			break;
 
 		case 2:
-			oled_write_P(PSTR("BT2:iPad   "), false);
+			oled_write_P(PSTR("BT2:iPad    "), false);
 			break;
 
 		case 3:
-			oled_write_P(PSTR("BT3:iPhone "), false);
+			oled_write_P(PSTR("BT3:iPhone  "), false);
 			break;
 
 		case 4:
-			oled_write_P(PSTR("BT4:Fold   "), false);
+			oled_write_P(PSTR("BT4:Fold    "), false);
 			break;
 
 		case 5:
-			oled_write_P(PSTR("BT5:Work   "), false);
+			oled_write_P(PSTR("BT5:Work    "), false);
 			break;
 
 		case 6:
-			oled_write_P(PSTR("BT6:AVP    "), false);
+			oled_write_P(PSTR("BT6:AVP     "), false);
 			break;
 
 		case 7:
-			oled_write_P(PSTR("BT7:WinPC  "), false);
+			oled_write_P(PSTR("BT7:WinPC   "), false);
 			break;
 
 		default:
-		    oled_write_P(PSTR("USB:       "), false);
+		    oled_write_P(PSTR("USB:        "), false);
 			break;
 	}
+	oled_write_P(PSTR("         "), false);
 
 	// 2行目 ----------------------------------------------------------
 	oled_write_P(PSTR("Layer:"), false);
@@ -278,48 +299,48 @@ void oledkit_render_info_user(void) {
 	}
 
 	// 1行目 ----------------------------------------------------------
-	if(isScrollInvert){
-    	oled_write_P(PSTR("SCRL:Rev  "), false);
-	}else{
-    	oled_write_P(PSTR("SCRL:Nml "), false);
-	}
-
 	switch(pairingId){
 		case 0:
-			oled_write_P(PSTR("BT0:Slave  "), false);
+			oled_write_P(PSTR("BT0:Slave   "), false);
 			break;
 
 		case 1:
-			oled_write_P(PSTR("BT1:Macbook"), false);
+			oled_write_P(PSTR("BT1:Macbook "), false);
 			break;
 
 		case 2:
-			oled_write_P(PSTR("BT2:iPad   "), false);
+			oled_write_P(PSTR("BT2:iPad    "), false);
 			break;
 
 		case 3:
-			oled_write_P(PSTR("BT3:iPhone "), false);
+			oled_write_P(PSTR("BT3:iPhone  "), false);
 			break;
 
 		case 4:
-			oled_write_P(PSTR("BT4:Fold   "), false);
+			oled_write_P(PSTR("BT4:Fold    "), false);
 			break;
 
 		case 5:
-			oled_write_P(PSTR("BT5:Work   "), false);
+			oled_write_P(PSTR("BT5:Work    "), false);
 			break;
 
 		case 6:
-			oled_write_P(PSTR("BT6:AVP    "), false);
+			oled_write_P(PSTR("BT6:AVP     "), false);
 			break;
 
 		case 7:
-			oled_write_P(PSTR("BT7:WinPC  "), false);
+			oled_write_P(PSTR("BT7:WinPC   "), false);
 			break;
 
 		default:
-		    oled_write_P(PSTR("USB:       "), false);
+		    oled_write_P(PSTR("USB:        "), false);
 			break;
+	}
+
+	if(isScrollInvert){
+    	oled_write_P(PSTR(" SCRL:Rev"), false);
+	}else{
+    	oled_write_P(PSTR(" SCRL:Nml"), false);
 	}
 
 	// 2行目 ----------------------------------------------------------
@@ -369,31 +390,30 @@ void oledkit_render_info_user(void) {
 	// オートマウスレイヤの閾値確認用
 	oled_write_P(PSTR("AMT:"), false);
 	uint8_t amThreshold = keyball_get_auto_mouse_threshold();
-    oled_write(format_4d(amThreshold), false);
+    oled_write(format_3d(amThreshold), false);
 
 	oled_write_P(PSTR(" TM:"), false);
 	uint8_t totalMove = keyball_get_total_move();
-    oled_write(format_4d(totalMove), false);
+    oled_write(format_3d(totalMove), false);
 
-	oled_write_P(PSTR(" ["), false);
+	oled_write_P(PSTR(" "), false);
 	if(isAntiSleepOn){
 		oled_write_P(PSTR("AS"), false);
 	}else{
-		oled_write_P(PSTR("  "), false);
+		oled_write_P(PSTR("__"), false);
 	}
-	oled_write_P(PSTR("/"), false);
+	oled_write_P(PSTR("|"), false);
 	if(isKeyDisabled){
 		oled_write_P(PSTR("IL"), false);
 	}else{
-		oled_write_P(PSTR("  "), false);
+		oled_write_P(PSTR("__"), false);
 	}
-	oled_write_P(PSTR("] "), false);
+	oled_write_P(PSTR(" "), false);
 	
 	// 4行目 ----------------------------------------------------------
     oled_write_P(PSTR("CP:"), false);
     oled_write(format_4d(keyball_get_cpi()) + 1, false);
-    oled_write_P(PSTR("00 SD:"), false);
-    oled_write_char(keyball_get_scroll_div(), false);
+    oled_write_P(PSTR("00 "), false);
 }
 #endif
 
@@ -702,13 +722,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			if (record->event.pressed) {
 				keyball_set_auto_mouse_threshold(keyball_get_auto_mouse_threshold() - 1);
 			}
-			return true;
+			return false;
 
 		case AMT_P1:
 			if (record->event.pressed) {
 				keyball_set_auto_mouse_threshold(keyball_get_auto_mouse_threshold() + 1);
 			}
-			return true;
+			return false;
 
 		case AD_WO_L:
 			return true;
