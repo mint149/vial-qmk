@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NEXTXLS LCTL(KC_PGDN)
 #define PREVXLS LCTL(KC_PGUP)
 #define MOADJ MO(_ADJUST)
+#define TTTTT TG(_MOUSE)
 
 #define ANTI_SLEEP_INTERVAL 10000
 
@@ -56,6 +57,7 @@ enum custom_keycodes {
 	AMT_P1,
 	// オートマウスレイヤに入る閾値を-1
 	AMT_M1,
+	MOUSEON,
 };
 
 bool isInit = true;
@@ -78,14 +80,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
 		KC_LCTL, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_ENT ,
 		KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,                   KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_QUOT,
-										    KC_LGUI, MOADJ, KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, MOADJ
+										    KC_LGUI, MOADJ, KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, MOUSEON
 	),
 
 	[_MAC] = LAYOUT_universal(
 		KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
 		KC_LGUI, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_ENT ,
 		KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,                   KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_QUOT,
-										    KC_LALT, MOADJ  , KC_LGUI, IMEOFF , KC_SPC , KC_LCTL, IMEON  , NOSPACE, NOSPACE, MOADJ
+										    KC_LALT, MOADJ  , KC_LGUI, IMEOFF , KC_SPC , KC_LCTL, IMEON  , NOSPACE, NOSPACE, MOUSEON
 	),
 
 	[_LOWER] = LAYOUT_universal(
@@ -611,6 +613,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			if (record->event.pressed) {
 				imeOffOnly = true;
 				layer_on(_LOWER);
+				layer_off(_MOUSE);
 				auto_mouse_layer_off();
 				update_tri_layer(_LOWER, _RAISE, _ADJUST);
 			} else {
@@ -638,6 +641,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			if (record->event.pressed) {
 				imeOnOnly = true;
 				layer_on(_RAISE);
+				layer_off(_MOUSE);
 				auto_mouse_layer_off();
 				update_tri_layer(_LOWER, _RAISE, _ADJUST);
 			} else {
@@ -727,6 +731,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 		case AMT_P1:
 			if (record->event.pressed) {
 				keyball_set_auto_mouse_threshold(keyball_get_auto_mouse_threshold() + 1);
+			}
+			return false;
+
+		case MOUSEON:
+			if (record->event.pressed) {
+				layer_on(_MOUSE);
 			}
 			return false;
 
