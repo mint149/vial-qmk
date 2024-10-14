@@ -37,7 +37,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NEXTXLS LCTL(KC_PGDN)
 #define PREVXLS LCTL(KC_PGUP)
 #define MOADJ MO(_ADJUST)
-#define TTTTT TG(_MOUSE)
 
 #define ANTI_SLEEP_INTERVAL 10000
 
@@ -49,7 +48,6 @@ enum custom_keycodes {
 	IMEOFF,
 	TGL_JIS,
 	TGL_AS,
-	TGL_MS,
 	TGL_LOCK,
 	TGL_SCRL,
 	TGL_OLED,
@@ -80,7 +78,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 		KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
 		KC_LCTL, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_ENT ,
 		KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,                   KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_QUOT,
-										    KC_LGUI, MOADJ, KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, MOUSEON
+										    KC_LGUI, MOADJ  , KC_LALT, IMEOFF , KC_SPC , KC_RGUI, IMEON  , NOSPACE, NOSPACE, MOUSEON
 	),
 
 	[_MAC] = LAYOUT_universal(
@@ -128,23 +126,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // clang-format on
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-	// Auto enable scroll mode when the highest layer is 3
-
-	// keyball_set_scroll_mode(get_highest_layer(state) == 3);
-
-	switch(get_highest_layer(remove_auto_mouse_layer(state, true))) {
+	switch(get_highest_layer(state)) {
 		case _SCROLL:
-			// Auto enable scroll mode when the highest layer is 3
-			state = remove_auto_mouse_layer(state, false);
-			set_auto_mouse_enable(false);
 			keyball_set_scroll_mode(true);
 			break;
 		default:
-			if(isMouseOnly){
-				keyball_set_scroll_mode(false);
-				break;
-			}
-			set_auto_mouse_enable(true);
 			keyball_set_scroll_mode(false);
 			break;
 	}
@@ -295,7 +281,6 @@ bool is_mouse_record_user(uint16_t keycode, keyrecord_t* record) {
 // メイン側OLEDの表示制御
 void oledkit_render_info_user(void) {
 	if(isInit){
-		set_auto_mouse_enable(true);
 		keyball_set_scroll_mode(false);
 		isInit = false;
 	}
@@ -515,7 +500,6 @@ bool twpair_on_jis(uint16_t keycode, keyrecord_t *record) {
 }
 
 void pointing_device_init_user(void) {
-    set_auto_mouse_enable(true);
 }
 
 // トラックボールのセンサ値取得時に呼ばれるイベント
@@ -547,11 +531,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 				// TODO:全く同じ処理なので関数化したほうがいい
 				if (record->event.pressed) {
 					layer_on(_LOWER);
-					auto_mouse_layer_off();
 					update_tri_layer(_LOWER, _RAISE, _ADJUST);
 				} else {
 					layer_off(_LOWER);
-					auto_mouse_layer_off();
 					update_tri_layer(_LOWER, _RAISE, _ADJUST);
 				}
 				return false;
@@ -559,11 +541,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 			case IMEON:
 				if (record->event.pressed) {
 					layer_on(_RAISE);
-					auto_mouse_layer_off();
 					update_tri_layer(_LOWER, _RAISE, _ADJUST);
 				} else {
 					layer_off(_RAISE);
-					auto_mouse_layer_off();
 					update_tri_layer(_LOWER, _RAISE, _ADJUST);
 				}
 				return false;
@@ -614,11 +594,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 				imeOffOnly = true;
 				layer_on(_LOWER);
 				layer_off(_MOUSE);
-				auto_mouse_layer_off();
+				// auto_mouse_layer_off();
 				update_tri_layer(_LOWER, _RAISE, _ADJUST);
 			} else {
 				layer_off(_LOWER);
-				auto_mouse_layer_off();
+				layer_off(_MOUSE);
+				// auto_mouse_layer_off();
 				update_tri_layer(_LOWER, _RAISE, _ADJUST);
 		
 				if (imeOffOnly) {
@@ -642,11 +623,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 				imeOnOnly = true;
 				layer_on(_RAISE);
 				layer_off(_MOUSE);
-				auto_mouse_layer_off();
 				update_tri_layer(_LOWER, _RAISE, _ADJUST);
 			} else {
 				layer_off(_RAISE);
-				auto_mouse_layer_off();
+				layer_off(_MOUSE);
 				update_tri_layer(_LOWER, _RAISE, _ADJUST);
 		
 				if (imeOnOnly) {
@@ -680,26 +660,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 			return false;
 		
-		case TGL_MS:
-			if (record->event.pressed) {
-				if(isMouseOnly){
-					isMouseOnly = false;
-					set_auto_mouse_enable(true);
-				}else{
-					isMouseOnly = true;
-					set_auto_mouse_enable(false);
-					layer_on(_MOUSE);
-				}
-			}
-			return false;
-
 		case TGL_LOCK:
 			if (record->event.pressed) {
 				isKeyDisabled = true;
 				layer_off(_LOWER);
 				layer_off(_RAISE);
 				layer_off(_ADJUST);
-				auto_mouse_layer_off();
 				update_tri_layer(_LOWER, _RAISE, _ADJUST);
 			}
 			return false;
